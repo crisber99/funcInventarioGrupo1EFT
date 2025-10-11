@@ -8,14 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-
-import org.slf4j.Logger;
+import java.util.logging.Logger;
 
 public class FuncionBodega {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final int SIN_BODEGA = 0;
-    Logger logger;
 
     @FunctionName("Bodegas")
     public HttpResponseMessage handleBaseRequests(
@@ -58,6 +56,7 @@ public class FuncionBodega {
                     HttpMethod.DELETE }, route = "bodegas/{id}", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
             @BindingName("id") String id,
             final ExecutionContext context) {
+        Logger logger = context.getLogger();
 
         String dbConnectionString = System.getenv("DB_CONNECTION_STRING");
         String dbUser = System.getenv("DB_USER");
@@ -78,7 +77,7 @@ public class FuncionBodega {
                 return updateBodega(conn, Integer.parseInt(id), updatedBodega, request);
             } else if (request.getHttpMethod() == HttpMethod.DELETE) {
                 // DELETE
-                return deleteBodega(conn, Integer.parseInt(id), request);
+                return deleteBodega(conn, Integer.parseInt(id), request, logger);
             }
 
         } catch (Exception e) {
@@ -178,7 +177,7 @@ public class FuncionBodega {
         }
     }
 
-    private HttpResponseMessage deleteBodega(Connection conn, int id, HttpRequestMessage<Optional<String>> request)
+    private HttpResponseMessage deleteBodega(Connection conn, int id, HttpRequestMessage<Optional<String>> request, Logger logger )
             throws SQLException {
 
         // agregamos lo solicitado en la semana EFT
@@ -200,7 +199,7 @@ public class FuncionBodega {
                         .header("Content-Type", "application/json")
                         .build();
             } else {
-                logger.warn("No se encontró Bodega ID " + id + " para eliminar.");
+                logger.warning("No se encontró Bodega ID " + id + " para eliminar.");
                 return request.createResponseBuilder(HttpStatus.NOT_FOUND)
                         .header("Content-Type", "application/json")
                         .body("Bodega no encontrada.").build();

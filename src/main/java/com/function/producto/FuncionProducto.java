@@ -19,21 +19,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-
-import org.slf4j.Logger;
+import java.util.logging.Logger;
 
 public class FuncionProducto {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final int BODEGA_POR_DEFECTO = 1;
-    Logger logger;
 
     @FunctionName("Productos")
     public HttpResponseMessage handleBaseRequests(
             @HttpTrigger(name = "req", methods = { HttpMethod.GET,
                     HttpMethod.POST }, route = "productos", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
             final ExecutionContext context) {
-
+        Logger logger = context.getLogger();
         activaEvento(request, context);
 
         String dbConnectionString = System.getenv("DB_CONNECTION_STRING");
@@ -52,7 +50,7 @@ public class FuncionProducto {
             } else if (request.getHttpMethod() == HttpMethod.POST) {
                 // CREATE
                 Producto newProducto = objectMapper.readValue(request.getBody().get(), Producto.class);
-                return createProducto(conn, newProducto, request);
+                return createProducto(conn, newProducto, request, logger);
             }
 
         } catch (Exception e) {
@@ -179,7 +177,7 @@ public class FuncionProducto {
     }
 
     private HttpResponseMessage createProducto(Connection conn, Producto newProducto,
-            HttpRequestMessage<Optional<String>> request) throws SQLException {
+            HttpRequestMessage<Optional<String>> request, Logger logger) throws SQLException {
         // agregamos lo solicitado en la semana EFT
         if (newProducto.getIdBodega() == 0) {
             newProducto.setIdBodega(BODEGA_POR_DEFECTO);
